@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interaktivní graf</title>
+  <style>
+    /* Základní reset a nastavení fontu */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 20px;
+    }
+    /* Styl pro legendu */
+    #legend {
+      background: #fff;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    #legend ul {
+      list-style: none;
+      padding-left: 20px;
+    }
+    #legend li {
+      margin-bottom: 5px;
+    }
+    /* Paleta pro nové uzly – obrázky přímo */
+    #nodePalette {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .paletteItem {
+      max-width: 100px;
+      max-height: 100px;
+      padding: 10px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      cursor: move;
+      transition: transform 0.2s;
+    }
+    .paletteItem:hover {
+      transform: scale(1.05);
+    }
+    /* Wrapper pro canvas a tlačítko s relativním pozicováním */
+    #canvasWrapper {
+      position: relative;
+    }
+    /* Tlačítko umístěné v pravém horním rohu kreslící plochy */
+    #controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10;
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      background: #007BFF;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    /* Responzivní canvas */
+    canvas {
+      background: #fff;
+      border: 1px solid #ccc;
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    /* Stylování návodu */
+#instructions {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+#instructions h2 {
+  margin-top: 0;
+  font-size: 1.8em;
+  border-bottom: 2px solid #007BFF;
+  padding-bottom: 8px;
+  color: #007BFF;
+  text-align: center;
+}
+
+.instruction-row {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.instruction-item {
+  flex: 1;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  padding: 10px 15px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.instruction-item:hover {
+  background-color: #eef6ff;
+}
+
+.instruction-icon {
+  font-size: 1.5em;
+  margin-right: 10px;
+  width: 40px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.instruction-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.instruction-header {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.instruction-detail {
+  font-family: 'Verdana', sans-serif;
+  font-size: 0.95em;
+  color: #555;
+}
+.instruction-header {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #333;
+  height: 30px;             /* Pevně daná výška záhlaví */
+  line-height: 30px;        /* Vertikální centrování textu */
+  border-bottom: 1px solid #ccc; /* Jemné oddělení záhlaví */
+  margin-bottom: 8px;       /* Odstup pod záhlavím */
+}
+
+.instruction-detail {
+  font-family: 'Verdana', sans-serif;
+  font-size: 0.95em;
+  color: #555;
+  padding-top: 5px;         /* Jemný odsazení od záhlaví */
+}
+
+
+
+  </style>
+</head>
+<body>
+  <div class="container">
+   <!-- Upravený návod -->
+<div id="instructions">
+  <h2>Návod</h2>
+  <div class="instruction-row">
+    <div class="instruction-item">
+      <div class="instruction-icon">➕</div>
+      <div class="instruction-content">
+        <div class="instruction-header">Přidání zařízení</div>
+        <div class="instruction-detail">Přetáhněte obrázek z nabídky na plochu.</div>
+      </div>
+    </div>
+    <div class="instruction-item">
+      <div class="instruction-icon">🔗</div>
+      <div class="instruction-content">
+        <div class="instruction-header">Vytváření cest</div>
+        <div class="instruction-detail">Táhněte cestu z jednoho zařízení na druhý.</div>
+      </div>
+    </div>
+    <div class="instruction-item">
+      <div class="instruction-icon">🔀</div>
+      <div class="instruction-content">
+        <div class="instruction-header">Přesun zařízení</div>
+        <div class="instruction-detail">Držte Shift a tahejte zařízení.</div>
+      </div>
+    </div>
+    <div class="instruction-item">
+      <div class="instruction-icon">❌</div>
+      <div class="instruction-content">
+        <div class="instruction-header">Smazání cesty</div>
+        <div class="instruction-detail">Klikněte na cestu.</div>
+      </div>
+    </div>
+    <div class="instruction-item">
+      <div class="instruction-icon">🗑️</div>
+      <div class="instruction-content">
+        <div class="instruction-header">Smazání zařízení</div>
+        <div class="instruction-detail">Dvakrát klikněte na zařízení.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    <!-- Paleta pro nové uzly – obrázkové možnosti -->
+    <div id="nodePalette">
+      <img class="paletteItem" id="newNodeChytra" draggable="true" data-type="chytrakrizovatka_kratka" src="chytrakrizovatka_kratka.svg" alt="Chytrakřižovatka">
+      <img class="paletteItem" id="newNodeServer" draggable="true" data-type="server" src="server.svg" alt="Server">
+      <img class="paletteItem" id="newNodeBts" draggable="true" data-type="bts" src="bts.svg" alt="BTS">
+      <img class="paletteItem" id="newNodeWifi" draggable="true" data-type="wifi" src="wifi.svg" alt="WiFi">
+      <img class="paletteItem" id="newNodePC" draggable="true" data-type="pc" src="pc.svg" alt="PC">
+      <img class="paletteItem" id="newNodeNotebook" draggable="true" data-type="notebook" src="notebook.svg" alt="Notebook">
+      <img class="paletteItem" id="newNodeMobil" draggable="true" data-type="mobil" src="mobil.svg" alt="Mobil">
+    </div>
+    <!-- Canvas a ovládací tlačítko -->
+    <div id="canvasWrapper">
+      <canvas id="graphCanvas" width="800" height="600"></canvas>
+      <div id="controls">
+        <button id="resetBtn">Reset</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    /* Uložení původního stavu sítě – u uzlů nastavujeme vlastnost type */
+    const initialNodes = [];
+
+    const initialEdges = [];
+
+    // Pracovní kopie uzlů a hran
+    let nodes = JSON.parse(JSON.stringify(initialNodes));
+    let edges = JSON.parse(JSON.stringify(initialEdges));
+
+    const canvas = document.getElementById('graphCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Proměnné pro tvorbu hran
+    let dragStartNode = null;
+    let isDragging = false;
+    let currentMousePos = { x: 0, y: 0 };
+
+    // Proměnné pro přesouvání uzlů
+    let movingNode = null;
+    let isMoving = false;
+
+    // Nastavíme maximální velikost uzlu (šířka/výška)
+    const nodeSize = 150;
+    const nodeSizes = {
+  "chytrakrizovatka_kratka": 120,
+  "server": 100,
+  "bts": 200,
+  "wifi": 70,
+  "pc": 80,
+  "notebook": 70,
+  "mobil": 60
+};
+
+
+    // Objekt s obrázky pro jednotlivé typy uzlů
+    const images = {
+      "chytrakrizovatka_kratka": new Image(),
+      "server": new Image(),
+      "bts": new Image(),
+      "wifi": new Image(),
+      "pc": new Image(),
+      "notebook": new Image(),
+      "mobil": new Image()
+    };
+    images.chytrakrizovatka_kratka.crossOrigin = "anonymous";
+    images.chytrakrizovatka_kratka.src = "chytrakrizovatka_kratka.svg";
+    images.server.crossOrigin = "anonymous";
+    images.server.src = "server.svg";
+    images.bts.crossOrigin = "anonymous";
+    images.bts.src = "bts.svg";
+    images.wifi.crossOrigin = "anonymous";
+    images.wifi.src = "wifi.svg";
+    images.pc.crossOrigin = "anonymous";
+    images.pc.src = "pc.svg";
+    images.notebook.crossOrigin = "anonymous";
+    images.notebook.src = "notebook.svg";
+    images.mobil.crossOrigin = "anonymous";
+    images.mobil.src = "mobil.svg";
+
+    // Obsluha načtení nebo chyby obrázků – jednoduchý onload, poté se vykreslí graf
+    images.chytrakrizovatka_kratka.onload = images.server.onload = 
+    images.bts.onload = images.wifi.onload = images.pc.onload = images.notebook.onload = images.mobil.onload = () => { drawGraph(); };
+    // Případně, pokud obrázky selžou, se použije fallback (kreslení uzlu jako kruhu)
+    drawGraph();
+
+    // Přepočítá pozici myši na vnitřní rozlišení canvasu
+    function getMousePos(evt) {
+      const rect = canvas.getBoundingClientRect();
+  return {
+    x: evt.clientX - rect.left,
+    y: evt.clientY - rect.top
+  };
+    }
+
+    // Vrátí uzel, pokud je bod uvnitř oblasti uzlu
+    function nodeAtPos(pos) {
+  return nodes.find(node => {
+    const currentSize = nodeSizes[node.type] || 80;
+    let rect = null;
+    let img = images[node.type];
+    if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+      const scale = Math.min(currentSize / img.naturalWidth, currentSize / img.naturalHeight);
+      const drawWidth = img.naturalWidth * scale;
+      const drawHeight = img.naturalHeight * scale;
+      rect = {
+        x: node.x - drawWidth / 2,
+        y: node.y - drawHeight / 2,
+        width: drawWidth,
+        height: drawHeight
+      };
+    } else {
+      const half = currentSize / 2;
+      rect = {
+        x: node.x - half,
+        y: node.y - half,
+        width: currentSize,
+        height: currentSize
+      };
+    }
+    return (pos.x >= rect.x && pos.x <= rect.x + rect.width &&
+            pos.y >= rect.y && pos.y <= rect.y + rect.height);
+  });
+}
+
+
+    // Výpočet vzdálenosti bodu od úsečky (pro detekci kliknutí na hranu)
+    function pointLineDistance(point, lineStart, lineEnd) {
+      const A = point.x - lineStart.x;
+      const B = point.y - lineStart.y;
+      const C = lineEnd.x - lineStart.x;
+      const D = lineEnd.y - lineStart.y;
+      const dot = A * C + B * D;
+      const lenSq = C * C + D * D;
+      let param = lenSq ? dot / lenSq : -1;
+      let xx, yy;
+      if (param < 0) { 
+        xx = lineStart.x; 
+        yy = lineStart.y; 
+      } else if (param > 1) { 
+        xx = lineEnd.x; 
+        yy = lineEnd.y; 
+      } else { 
+        xx = lineStart.x + param * C; 
+        yy = lineStart.y + param * D; 
+      }
+      const dx = point.x - xx;
+      const dy = point.y - yy;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // Zjistí, zda bylo kliknuto na hranu – platí i pro původní hrany
+    function edgeAtPos(pos) {
+      for (let i = 0; i < edges.length; i++) {
+        const edge = edges[i];
+        const nodeA = nodes.find(n => n.id === edge.from);
+        const nodeB = nodes.find(n => n.id === edge.to);
+        if (!nodeA || !nodeB) continue;
+        const dist = pointLineDistance(pos, nodeA, nodeB);
+        if (dist < 20) {
+          return { edge, index: i };
+        }
+      }
+      return null;
+    }
+
+    // Vykreslení grafu – hrany a uzly (bez čísel)
+    // Animační smyčka, která plynule aktualizuje currentScale u každého uzlu
+function animateNodes() {
+  const hoveredNode = nodeAtPos(currentMousePos); // zjistíme, který uzel je hoverovaný
+  nodes.forEach(node => {
+    // Cílové měřítko: pokud je uzel hoverovaný, cílové scale je 1.1, jinak 1.
+    const targetScale = (hoveredNode && hoveredNode.id === node.id) ? 1.1 : 1;
+    // Pokud currentScale není definováno, inicializujeme na 1.
+    if (typeof node.currentScale === 'undefined') {
+      node.currentScale = 1;
+    }
+    // Plynulé změny (easing) – čím menší hodnota, tím pomalejší animace.
+    node.currentScale += (targetScale - node.currentScale) * 0.1;
+  });
+  drawGraph();
+  requestAnimationFrame(animateNodes);
+}
+
+// Spustíme animační smyčku
+animateNodes();
+
+function drawGraph() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Vykreslení hran – všechny budou černé, kromě hoverované hrany, která bude světle šedá
+  edges.forEach((edge, i) => {
+    const nodeA = nodes.find(n => n.id === edge.from);
+    const nodeB = nodes.find(n => n.id === edge.to);
+    if (!nodeA || !nodeB) return;
+    // Pokud je tato hrana hoverovaná, interpolujeme barvu
+  if (i === hoveredEdgeIndex) {
+    // Interpolace mezi černou (0) a světle šedou (#d3d3d3)
+    // Například, černá: rgb(0,0,0), světle šedá: rgb(211,211,211)
+    const r = Math.round(211 * edgeHoverTransition);
+    ctx.strokeStyle = `rgb(${r}, ${r}, ${r})`;
+  } else {
+    ctx.strokeStyle = "black";
+  }
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(nodeA.x, nodeA.y);
+    ctx.lineTo(nodeB.x, nodeB.y);
+    ctx.stroke();
+  });
+
+  // Náhled hrany při tvorbě hrany (drag and drop)
+  if (isDragging && dragStartNode) {
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(dragStartNode.x, dragStartNode.y);
+    ctx.lineTo(currentMousePos.x, currentMousePos.y);
+    ctx.stroke();
+  }
+
+  // Vykreslení uzlů – dle jejich typu se vykreslí odpovídající obrázek s plynulým zvětšením
+  nodes.forEach(node => {
+    const baseSize = nodeSizes[node.type] || 80;
+    const sizeToUse = baseSize * (node.currentScale || 1);
+    let img = images[node.type];
+    if (img && img.complete && img.naturalWidth > 0) {
+      const scale = Math.min(sizeToUse / img.naturalWidth, sizeToUse / img.naturalHeight);
+      const drawWidth = img.naturalWidth * scale;
+      const drawHeight = img.naturalHeight * scale;
+      ctx.drawImage(img, node.x - drawWidth / 2, node.y - drawHeight / 2, drawWidth, drawHeight);
+    } else {
+      const half = sizeToUse / 2;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, half, 0, 2 * Math.PI);
+      ctx.fillStyle = "white";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "black";
+      ctx.stroke();
+    }
+  });
+}
+
+    
+ // Aktualizace pozice myši a nastavení kurzoru při pohybu myši
+// Globální proměnná pro index hoverované hrany
+let hoveredEdgeIndex = -1;
+let edgeHoverTarget = 0;      // 1 = cílová barva (světle šedá), 0 = černá
+let edgeHoverTransition = 0;  // aktuální přechodová hodnota
+
+
+canvas.addEventListener("mousemove", (evt) => {
+  currentMousePos = getMousePos(evt);
+  const hoveredNode = nodeAtPos(currentMousePos);
+
+  if (hoveredNode) {
+    hoveredEdgeIndex = -1;
+    edgeHoverTarget = 0; // když jsme nad uzlem, žádná hrana nemá být hoverovaná
+    canvas.style.cursor = evt.shiftKey ? "grab" : "crosshair";
+  } else {
+    const hoveredEdge = edgeAtPos(currentMousePos);
+    if (hoveredEdge) {
+      hoveredEdgeIndex = hoveredEdge.index;
+      edgeHoverTarget = 1;
+      canvas.style.cursor = "default";
+    } else {
+      hoveredEdgeIndex = -1;
+      edgeHoverTarget = 0;
+      canvas.style.cursor = "default";
+    }
+  }
+  
+  if (isMoving && movingNode) {
+    movingNode.x = currentMousePos.x;
+    movingNode.y = currentMousePos.y;
+  }
+  
+  drawGraph();
+});
+function animate() {
+  // Plynulá změna edgeHoverTransition směrem k edgeHoverTarget.
+  edgeHoverTransition += (edgeHoverTarget - edgeHoverTransition) * 0.1;
+  
+  drawGraph();
+  requestAnimationFrame(animate);
+}
+animate();
+
+
+// Funkce aktualizující kurzor podle aktuálního stavu Shift a pozice myši
+function updateCursor(shiftPressed) {
+  const hoveredNode = nodeAtPos(currentMousePos);
+  if (hoveredNode) {
+    canvas.style.cursor = shiftPressed ? "grab" : "crosshair";
+  }
+}
+
+window.addEventListener("keydown", (evt) => {
+  if (evt.key === "Shift") updateCursor(true);
+});
+window.addEventListener("keyup", (evt) => {
+  if (evt.key === "Shift") updateCursor(false);
+});
+
+
+
+
+
+
+    // Kliknutí na hranu pro její smazání
+    canvas.addEventListener("click", (evt) => {
+      const pos = getMousePos(evt);
+      if (nodeAtPos(pos)) return;
+      const clickedEdge = edgeAtPos(pos);
+      if (clickedEdge) {
+        edges.splice(clickedEdge.index, 1);
+        drawGraph();
+      }
+    });
+    
+    // mousedown: rozlišujeme režim přesunu uzlu (Shift) nebo tvorbu hrany (bez Shift)
+    canvas.addEventListener("mousedown", (evt) => {
+      const pos = getMousePos(evt);
+      const node = nodeAtPos(pos);
+      if (node) {
+        if (evt.shiftKey) {
+          movingNode = node;
+          isMoving = true;
+        } else {
+          dragStartNode = node;
+          isDragging = true;
+        }
+      }
+    });
+
+    // mousemove: pokud přesouváme uzel, aktualizujeme jeho pozici; jinak jen vykreslujeme náhled hrany
+    canvas.addEventListener("mousemove", (evt) => {
+      currentMousePos = getMousePos(evt);
+      if (isMoving && movingNode) {
+        movingNode.x = currentMousePos.x;
+        movingNode.y = currentMousePos.y;
+        drawGraph();
+      } else if (isDragging) {
+        drawGraph();
+      }
+    });
+
+    // mouseup: ukončíme režim přesunu nebo tvorbu hrany
+    canvas.addEventListener("mouseup", (evt) => {
+      if (isMoving) {
+        isMoving = false;
+        movingNode = null;
+      } else if (isDragging && dragStartNode) {
+        const pos = getMousePos(evt);
+        const endNode = nodeAtPos(pos);
+        if (endNode && endNode.id !== dragStartNode.id) {
+          const exists = edges.some(e =>
+            (e.from === dragStartNode.id && e.to === endNode.id) ||
+            (e.from === endNode.id && e.to === dragStartNode.id)
+          );
+          if (!exists) {
+            edges.push({ from: dragStartNode.id, to: endNode.id, isNew: true });
+          }
+        }
+        isDragging = false;
+        dragStartNode = null;
+      }
+      drawGraph();
+    });
+
+
+    // Dvojklik na uzel – smazání uzlu a všech jeho hran
+    canvas.addEventListener("dblclick", (evt) => {
+      const pos = getMousePos(evt);
+      const node = nodeAtPos(pos);
+      if (node) {
+        nodes = nodes.filter(n => n.id !== node.id);
+        edges = edges.filter(e => e.from !== node.id && e.to !== node.id);
+        drawGraph();
+      }
+    });
+
+    // Obsluha dragstart pro položky v paletě – nastavíme typ uzlu
+    document.querySelectorAll(".paletteItem").forEach(item => {
+      item.addEventListener("dragstart", (evt) => {
+        const nodeType = evt.target.getAttribute("data-type");
+        evt.dataTransfer.setData("nodeType", nodeType);
+      });
+    });
+
+    // Obsluha dragover a drop na canvasu pro přidání nového uzlu
+    canvas.addEventListener("dragover", (evt) => {
+      evt.preventDefault();
+    });
+    canvas.addEventListener("drop", (evt) => {
+      evt.preventDefault();
+      const nodeType = evt.dataTransfer.getData("nodeType");
+      if (nodeType) {
+        const pos = getMousePos(evt);
+        const newId = nodes.length ? Math.max(...nodes.map(n => n.id)) + 1 : 1;
+        nodes.push({ id: newId, x: pos.x, y: pos.y, type: nodeType });
+        drawGraph();
+      }
+    });
+
+    // Reset tlačítko – obnoví původní síť
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      nodes = JSON.parse(JSON.stringify(initialNodes));
+      edges = JSON.parse(JSON.stringify(initialEdges));
+      drawGraph();
+    });
+
+    // Responzivní design: při změně velikosti okna se canvas škáluje
+    function resizeCanvas() {
+      // Zjistíme aktuální rozměry z CSS
+  const displayWidth = canvas.clientWidth;
+  const displayHeight = canvas.clientHeight;
+  // Získáme devicePixelRatio
+  const ratio = window.devicePixelRatio || 1;
+  // Nastavíme skutečnou velikost canvasu
+  canvas.width = displayWidth * ratio;
+  canvas.height = displayHeight * ratio;
+  // Resetujeme transformaci a nastavíme měřítko
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  drawGraph();
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+  </script>
+</body>
+</html>
