@@ -408,20 +408,18 @@ animateNodes();
 function drawGraph() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Vykreslení hran – všechny budou černé, kromě hoverované hrany, která bude světle šedá
+  // Nejprve vykreslíme hrany
   edges.forEach((edge, i) => {
     const nodeA = nodes.find(n => n.id === edge.from);
     const nodeB = nodes.find(n => n.id === edge.to);
     if (!nodeA || !nodeB) return;
-    // Pokud je tato hrana hoverovaná, interpolujeme barvu
-  if (i === hoveredEdgeIndex) {
-    // Interpolace mezi černou (0) a světle šedou (#d3d3d3)
-    // Například, černá: rgb(0,0,0), světle šedá: rgb(211,211,211)
-    const r = Math.round(211 * edgeHoverTransition);
-    ctx.strokeStyle = `rgb(${r}, ${r}, ${r})`;
-  } else {
-    ctx.strokeStyle = "black";
-  }
+    // Pokud je tato hrana hoverovaná, interpolujeme barvu mezi černou a světle šedou:
+    if (i === hoveredEdgeIndex) {
+      const r = Math.round(211 * edgeHoverTransition);
+      ctx.strokeStyle = `rgb(${r}, ${r}, ${r})`;
+    } else {
+      ctx.strokeStyle = "black";
+    }
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(nodeA.x, nodeA.y);
@@ -429,7 +427,7 @@ function drawGraph() {
     ctx.stroke();
   });
 
-  // Náhled hrany při tvorbě hrany (drag and drop)
+  // Náhled hrany při tvorbě (drag and drop)
   if (isDragging && dragStartNode) {
     ctx.strokeStyle = "black";
     ctx.lineWidth = 2;
@@ -439,11 +437,65 @@ function drawGraph() {
     ctx.stroke();
   }
 
-  // Vykreslení uzlů – dle jejich typu se vykreslí odpovídající obrázek s plynulým zvětšením
+  // Zjistíme, které uzly typu "bts" mají spojení s "chytrakrizovatka_kratka"
+  const highlightedBts = new Set();
+  const highlightedWifi = new Set();
+  edges.forEach(edge => {
+    const nodeA = nodes.find(n => n.id === edge.from);
+    const nodeB = nodes.find(n => n.id === edge.to);
+    if (nodeA && nodeB) {
+      if (nodeA.type === "bts" && nodeB.type === "chytrakrizovatka_kratka") {
+        highlightedBts.add(nodeA.id);
+      }
+      if (nodeB.type === "bts" && nodeA.type === "chytrakrizovatka_kratka") {
+        highlightedBts.add(nodeB.id);
+      }
+      if (nodeA.type === "wifi" && nodeB.type === "chytrakrizovatka_kratka") {
+        highlightedWifi.add(nodeA.id);
+      }
+      if (nodeB.type === "wifi" && nodeA.type === "chytrakrizovatka_kratka") {
+        highlightedWifi.add(nodeB.id);
+      }
+    }
+  });
+  
+  // Konstanta určující poloměr zvýrazňujícího kruhu (můžete upravit)
+  const btsHighlightRadius = 300;
+  const wifiHighlightRadius = 100;
+
+  // Vykreslení uzlů
   nodes.forEach(node => {
-    const baseSize = nodeSizes[node.type] || 80;
-    const sizeToUse = baseSize * (node.currentScale || 1);
+    const currentSize = nodeSizes[node.type] || 80;
+    // Plynulé zvětšení už máme implementováno přes currentScale (u hover efektu)
+    const sizeToUse = currentSize * (node.currentScale || 1);
     let img = images[node.type];
+    
+    // Zvýraznění pro uzly typu "bts"
+  if (node.type === "bts" && highlightedBts.has(node.id)) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, btsHighlightRadius, 0, 2 * Math.PI);
+    // Použijeme jemnou čárkovanou čáru s šedým odstínem
+    ctx.strokeStyle = "rgba(128, 128, 128, 0.7)";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([4, 4]); // 4px čára, 4px mezera
+    ctx.stroke();
+    ctx.restore();
+  }
+  
+  // Zvýraznění pro uzly typu "wifi"
+  if (node.type === "wifi" && highlightedWifi.has(node.id)) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, wifiHighlightRadius, 0, 2 * Math.PI);
+    // Použijeme lehce světlejší šedý odstín
+    ctx.strokeStyle = "rgba(160, 160, 160, 0.7)";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.restore();
+  }
+
     if (img && img.complete && img.naturalWidth > 0) {
       const scale = Math.min(sizeToUse / img.naturalWidth, sizeToUse / img.naturalHeight);
       const drawWidth = img.naturalWidth * scale;
@@ -461,6 +513,7 @@ function drawGraph() {
     }
   });
 }
+
 
     
  // Aktualizace pozice myši a nastavení kurzoru při pohybu myši
