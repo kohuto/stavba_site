@@ -234,11 +234,19 @@
       <canvas id="graphCanvas" width="800" height="600"></canvas>
       <div id="controls">
         <button id="resetBtn">Reset</button>
+        <button id="exportBtn">Export PNG</button>
       </div>
     </div>
   </div>
   
   <script>
+    document.getElementById("exportBtn").addEventListener("click", () => {
+  const link = document.createElement('a');
+  link.download = 'graph.png';
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+});
+
     /* Uložení původního stavu sítě – u uzlů nastavujeme vlastnost type */
     const initialNodes = [];
 
