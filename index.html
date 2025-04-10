@@ -170,6 +170,69 @@
   padding-top: 5px;         /* Jemný odsazení od záhlaví */
 }
 
+/* Kontejner pro celou paletu – necháme původní flex nastavení */
+#nodePalette {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+/* Kontejner jedné položky - fixní rozměry */
+.paletteItemContainer {
+  position: relative;
+  width: 120px;   /* nastavit podle požadované velikosti */
+  height: 120px;
+  border-radius: 8px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  overflow: hidden; /* zajistí, že overlay i obrázek zůstanou uvnitř */
+}
+
+/* Obrázek uvnitř kontejneru – vyplní celý kontejner a zachová si poměr stran */
+.paletteItem {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.2s;
+}
+
+/* Efekt zvětšení obrázku při hoveru přes celý kontejner */
+.paletteItemContainer:hover .paletteItem {
+  transform: scale(1.05);
+}
+
+/* Overlay, který pokryje celý kontejner a skryje se, dokud nenajedete myší */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.6); /* poloprůhledná bílá */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none; /* Zamezí zachytávání událostí overlay */
+}
+
+/* Overlay se zobrazí, když najedete myší na kontejner */
+.paletteItemContainer:hover .overlay {
+  opacity: 1;
+}
+
+/* Styl textu v overlay */
+.overlayText {
+  font-size: 1em;
+  font-weight: bold;
+  color: #333;
+  
+}
 
 
   </style>
@@ -220,15 +283,59 @@
 
 
     <!-- Paleta pro nové uzly – obrázkové možnosti -->
+    
     <div id="nodePalette">
-      <img class="paletteItem" id="newNodeChytra" draggable="true" data-type="chytrakrizovatka_kratka" src="chytrakrizovatka_kratka.svg" alt="Chytrakřižovatka">
-      <img class="paletteItem" id="newNodeServer" draggable="true" data-type="server" src="server.svg" alt="Server">
-      <img class="paletteItem" id="newNodeBts" draggable="true" data-type="bts" src="bts.svg" alt="BTS">
-      <img class="paletteItem" id="newNodeWifi" draggable="true" data-type="wifi" src="wifi.svg" alt="WiFi">
-      <img class="paletteItem" id="newNodePC" draggable="true" data-type="pc" src="pc.svg" alt="PC">
-      <img class="paletteItem" id="newNodeNotebook" draggable="true" data-type="notebook" src="notebook.svg" alt="Notebook">
-      <img class="paletteItem" id="newNodeMobil" draggable="true" data-type="mobil" src="mobil.svg" alt="Mobil">
+      <div class="paletteItemContainer" data-type="chytrakrizovatka_kratka">
+        <img class="paletteItem" draggable="true" src="chytrakrizovatka_kratka.svg" alt="Chytrakřižovatka">
+        <div class="overlay">
+          <span class="overlayText">Chytrá<br>křižovatka</span>
+        </div>
+      </div>
+      
+      <div class="paletteItemContainer" data-type="server">
+        <img class="paletteItem" draggable="true" src="server.svg" alt="Server">
+        <div class="overlay">
+          <span class="overlayText">Server</span>
+        </div>
+      </div>
+      
+      <div class="paletteItemContainer" data-type="bts">
+        <img class="paletteItem" draggable="true" src="bts.svg" alt="BTS">
+        <div class="overlay">
+          <span class="overlayText">BTS</span>
+        </div>
+      </div>
+      
+      <div class="paletteItemContainer" data-type="wifi">
+        <img class="paletteItem" draggable="true" src="wifi.svg" alt="WiFi">
+        <div class="overlay">
+          <span class="overlayText">WiFi<br>router</span>
+        </div>
+      </div>
+      
+      <div class="paletteItemContainer" data-type="pc">
+        <img class="paletteItem" draggable="true" src="pc.svg" alt="PC">
+        <div class="overlay">
+          <span class="overlayText">Stolní<br>PC</span>
+        </div>
+      </div>
+      
+      <div class="paletteItemContainer" data-type="notebook">
+        <img class="paletteItem" draggable="true" src="notebook.svg" alt="Notebook">
+        <div class="overlay">
+          <span class="overlayText">Notebook</span>
+        </div>
+      </div>
+      
+      <div class="paletteItemContainer" data-type="mobil">
+        <img class="paletteItem" draggable="true" src="mobil.svg" alt="Mobil">
+        <div class="overlay">
+          <span class="overlayText">Mobil</span>
+        </div>
+      </div>
     </div>
+    
+    
     <!-- Canvas a ovládací tlačítko -->
     <div id="canvasWrapper">
       <canvas id="graphCanvas"></canvas>
@@ -702,6 +809,18 @@ window.addEventListener("keyup", (evt) => {
     }
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
+
+    // Přidejte přetahování pro všechny položky v paletě
+    document.querySelectorAll('.paletteItem').forEach(img => {
+  img.addEventListener('dragstart', function(evt) {
+    // Získáme rodičovský kontejner pro daný obrázek
+    const container = this.closest('.paletteItemContainer');
+    const nodeType = container.getAttribute('data-type');
+    evt.dataTransfer.setData('nodeType', nodeType);
+  });
+});
+
+
   </script>
 </body>
 </html>
