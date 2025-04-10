@@ -231,7 +231,7 @@
     </div>
     <!-- Canvas a ovládací tlačítko -->
     <div id="canvasWrapper">
-      <canvas id="graphCanvas" width="800" height="600"></canvas>
+      <canvas id="graphCanvas"></canvas>
       <div id="controls">
         <button id="resetBtn">Reset</button>
         <button id="exportBtn">Export PNG</button>
@@ -308,12 +308,15 @@
 
     // Přepočítá pozici myši na vnitřní rozlišení canvasu
     function getMousePos(evt) {
-      const rect = canvas.getBoundingClientRect();
+  const rect = canvas.getBoundingClientRect();
   return {
     x: evt.clientX - rect.left,
     y: evt.clientY - rect.top
   };
-    }
+}
+
+
+
 
     // Vrátí uzel, pokud je bod uvnitř oblasti uzlu
     function nodeAtPos(pos) {
@@ -692,12 +695,9 @@ window.addEventListener("keyup", (evt) => {
   const displayWidth = canvas.clientWidth;
   const displayHeight = canvas.clientHeight;
   // Získáme devicePixelRatio
-  const ratio = window.devicePixelRatio || 1;
-  // Nastavíme skutečnou velikost canvasu
-  canvas.width = displayWidth * ratio;
-  canvas.height = displayHeight * ratio;
-  // Resetujeme transformaci a nastavíme měřítko
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  canvas.width = displayWidth;
+  canvas.height = displayHeight;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   drawGraph();
     }
     window.addEventListener("resize", resizeCanvas);
